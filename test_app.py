@@ -35,16 +35,16 @@ class TestNLPServices(unittest.TestCase):
     self.assertEqual(response.status, '401 UNAUTHORIZED') 
     
 
-  # def test_sendMessage_validToken(self):
-  #   self.test_app=app.test_client(self)
-  #   data = {'appId': 1}
-  #   headers = {'Content-Type' : 'application/json'}
-  #   response=self.test_app.post('/authenticate',data=json.dumps(data), headers=headers)  
-  #   key=json.loads(response.data.decode('utf-8'))['token']    
-  #   data = {'message': 'i broke my mobile'}
-  #   headers = {'Content-Type' : 'application/json','authorization':key}
-  #   response=self.test_app.post('/processMessage',data=json.dumps(data), headers=headers)
-  #   self.assertEqual(response.status, "200 OK")  
+  def test_sendMessage_validToken(self):
+    self.test_app=app.test_client(self)
+    data = {'appId': 1}
+    headers = {'Content-Type' : 'application/json'}
+    response=self.test_app.post('/authenticate',data=json.dumps(data), headers=headers)  
+    key=json.loads(response.data.decode('utf-8'))['token']    
+    data = {'message': 'i broke my mobile'}
+    headers = {'Content-Type' : 'application/json','authorization':key}
+    response=self.test_app.post('/processMessage',data=json.dumps(data), headers=headers)
+    self.assertEqual(response.status, "200 OK")  
 
   def test_sendMessage_dataNotProvided(self):
     self.test_app=app.test_client(self)
