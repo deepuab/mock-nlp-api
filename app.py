@@ -2,6 +2,7 @@ from datetime import datetime, timedelta
 import json
 import nltk
 import jwt
+import requests
 
 from flask import Flask, request, jsonify, abort
 from nltk.corpus import stopwords
@@ -30,6 +31,17 @@ def authenticate_api(func):
     return authenticate_and_call
 
 
+def get_recomm_token():
+    """Get JWT token for recommendation API"""
+    data={"name":app.config["RECOMM_API_USER"],"password":app.config["RECOMM_API_PASS"]}
+    try:
+        response=requests.post(app.config["RECOMM_API_AUTHENTICATE_URL"],data=data)
+        token=response.json().get('token')
+        return token
+    except:
+        return None
+
+
 @app.route('/')
 def index():
      return "API for text Processing"
@@ -45,6 +57,8 @@ def process_message():
         return jsonify({'message': 'Data is not provided'})
     if 'message' in requestData:
         message = requestData['message']
+        clientId=requestData['clientId']
+        connectId=requestData['connectId']
         sid = SentimentIntensityAnalyzer()
         vad_score = sid.polarity_scores(message)
         neg_score = vad_score['neg']
@@ -68,9 +82,21 @@ def process_message():
         data = {
             "keywords":filtered_words,
             "sentiment":sentiment,
-            "vader_sentiment":vad_sentiment
+            "vader_sentiment":vad_sentiment,
+            "clientId":clientId,
+            "connectId":connectId
         }
-        return jsonify(data)
+        headers = {"x-access-token":app.config["RECOMM_API_TOKEN"]}
+        response = requests.post(app.config["RECOMM_API_RECOM_URL"],data=data,headers=headers,verify=False)
+        if response.status_code == 401:
+            app.config["RECOMM_API_TOKEN"] = get_recomm_token()
+            headers={"x-access-token":app.config["RECOMM_API_TOKEN"]}
+            response = requests.post(app.config["RECOMM_API_RECOM_URL"],data=data,headers=headers,verify=False)
+            if response.status_code == 200:
+                return jsonify({'message': 'Successfully posted data to recommender'})
+            else:
+                return jsonify({'message': 'Error  in posting data to recommender'})
+        return jsonify({'message': 'Successfully posted data to recommender'})
     else:
         return jsonify({'message': 'Data is not provided'})
 
