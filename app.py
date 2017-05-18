@@ -55,10 +55,10 @@ def process_message():
         requestData = json.loads(request.data.decode('utf-8'))
     except:
         return jsonify({'message': 'Data is not provided'})
-    if 'message' in requestData:
+    if  all(x in requestData for x in ['message','clientId','connectId']):
         message = requestData['message']
-        clientId=requestData['clientId']
-        connectId=requestData['connectId']
+        clientId = requestData['clientId']
+        connectId = requestData['connectId']
         sid = SentimentIntensityAnalyzer()
         vad_score = sid.polarity_scores(message)
         neg_score = vad_score['neg']
@@ -87,11 +87,11 @@ def process_message():
             "connectId":connectId
         }
         headers = {"x-access-token":app.config["RECOMM_API_TOKEN"]}
-        response = requests.post(app.config["RECOMM_API_RECOM_URL"],data=data,headers=headers,verify=False)
+        response = requests.post(app.config["RECOMM_API_RECOM_URL"], data=data,headers=headers)
         if response.status_code == 401:
             app.config["RECOMM_API_TOKEN"] = get_recomm_token()
             headers={"x-access-token":app.config["RECOMM_API_TOKEN"]}
-            response = requests.post(app.config["RECOMM_API_RECOM_URL"],data=data,headers=headers,verify=False)
+            response = requests.post(app.config["RECOMM_API_RECOM_URL"], data=data,headers=headers)
             if response.status_code == 200:
                 return jsonify({'message': 'Successfully posted data to recommender'})
             else:
@@ -106,7 +106,7 @@ def process_message():
 def authenticate():
     """Issues JWT token for API calls"""
     try:
-        requestData=json.loads(request.data.decode('utf-8'))
+        requestData = json.loads(request.data.decode('utf-8'))
     except:
         return jsonify({'message': 'App Id is not provided'})
     if 'appId'  in requestData:
